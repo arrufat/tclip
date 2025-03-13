@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"strings"
 
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
@@ -12,11 +13,12 @@ import (
 	"log"
 	"os"
 
+	"html"
+
 	"cloud.google.com/go/translate"
 	"github.com/0xAX/notificator"
 	"github.com/arrufat/clipboard"
 	"github.com/google/generative-ai-go/genai"
-	"html"
 )
 
 // GTranslate groups the client and the context needed for translation
@@ -72,7 +74,7 @@ func (gt *GTranslate) translate(targetLang, text string) (string, error) {
 	}
 	trans := ""
 	if gt.nmtClient != nil {
-		resp, err := gt.nmtClient.Translate(gt.ctx, []string{text}, lang, &translate.Options{Model: "nmt"})
+		resp, err := gt.nmtClient.Translate(gt.ctx, []string{text}, lang, &translate.Options{Model: "nmt", Format: "text"})
 		if err != nil {
 			return "", err
 		}
@@ -120,6 +122,7 @@ func main() {
 	learn := flag.String("l", "ko", "the language you are learning")
 	useLLM := flag.Bool("llm", false, "use an LLM for translation")
 	concat := flag.Bool("append", false, "append the translation")
+	separator := flag.String("sep", "---", "separator for the translation")
 	list := flag.Bool("list", false, "list all possible language codes")
 	flag.Parse()
 
@@ -195,7 +198,18 @@ func main() {
 		setPrimary(false)
 	}
 	if *concat {
-		trans = text + "\n---\n" + trans
+		if *separator == ">" {
+			lines := strings.Split(trans, "\n")
+			trans = strings.ReplaceAll(text, "\n\n", "\n") + "\n"
+			for i, line := range lines {
+				trans += "> " + line
+				if i < len(lines)-1 {
+					trans += "\n"
+				}
+			}
+		} else {
+			trans = text + "\n" + *separator + "\n" + trans
+		}
 	}
 	if err := clipboard.WriteAll(trans); err != nil {
 		log.Fatal(err)
