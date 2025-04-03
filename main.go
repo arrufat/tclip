@@ -36,7 +36,7 @@ func createClientWithKey(useLLM bool) (*GTranslate, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		llm := client.GenerativeModel("gemini-1.5-flash")
+		llm := client.GenerativeModel("gemini-2.0-flash-lite")
 		llm.SystemInstruction = &genai.Content{
 			Parts: []genai.Part{genai.Text("You are a language translator.\n" +
 				"Whenever you receive a message, you will only respond with a translated version of the message.\n" +
@@ -200,12 +200,9 @@ func main() {
 	if *concat {
 		if *separator == ">" {
 			lines := strings.Split(trans, "\n")
-			trans = strings.ReplaceAll(text, "\n\n", "\n") + "\n"
-			for i, line := range lines {
-				trans += "> " + line
-				if i < len(lines)-1 {
-					trans += "\n"
-				}
+			trans = strings.ReplaceAll(text, "\n\n", "\n")
+			for _, line := range lines {
+				trans += "\n> " + line
 			}
 		} else {
 			trans = text + "\n" + *separator + "\n" + trans
