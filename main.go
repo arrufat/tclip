@@ -121,8 +121,8 @@ func main() {
 	known := flag.String("k", "en", "the language you already know")
 	learn := flag.String("l", "ko", "the language you are learning")
 	useLLM := flag.Bool("llm", false, "use an LLM for translation")
-	concat := flag.Bool("append", false, "append the translation")
-	separator := flag.String("sep", "---", "separator for the translation")
+	separator := flag.String("sep", "", "separator between the original and the translated text,"+
+		" using \">\" will prepend each translated line with \"> \" instead")
 	list := flag.Bool("list", false, "list all possible language codes")
 	flag.Parse()
 
@@ -198,7 +198,11 @@ func main() {
 	if hasPrimary {
 		setPrimary(false)
 	}
-	if *concat {
+	concat := false
+	if *separator != "" {
+		concat = true
+	}
+	if concat {
 		if *separator == ">" {
 			lines := strings.Split(trans, "\n")
 			trans = text
