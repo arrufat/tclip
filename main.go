@@ -194,15 +194,14 @@ func main() {
 		}
 		det = "from " + det
 	}
+
 	log.Println("translated text:", trans)
+
 	if hasPrimary {
 		setPrimary(false)
 	}
-	concat := false
+
 	if *separator != "" {
-		concat = true
-	}
-	if concat {
 		if *separator == ">" {
 			lines := strings.Split(trans, "\n")
 			trans = text
@@ -217,8 +216,10 @@ func main() {
 		}
 		trans = strings.TrimRight(trans, "\n")
 	}
+
 	if err := clipboard.WriteAll(trans); err != nil {
 		log.Fatal(err)
 	}
+
 	notify.Push(fmt.Sprintf("Translating %s: %s", det, text), trans, "", notificator.UR_NORMAL)
 }
