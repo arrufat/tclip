@@ -78,7 +78,7 @@ func (gt *GTranslate) translate(targetLang, text string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		trans = html.UnescapeString(resp[0].Text)
+		trans = resp[0].Text
 	} else if gt.llmClient != nil {
 		resp, err := gt.llm.GenerateContent(gt.ctx, genai.Text(text))
 		if err != nil {
@@ -144,6 +144,7 @@ func main() {
 		notify.Push("Error", "No text selected", "", notificator.UR_NORMAL)
 		return
 	}
+	text = strings.ReplaceAll(text, "\n\n", "\n")
 	log.Println("selected text:", text)
 
 	gTrans, err := createClientWithKey(*useLLM)
@@ -200,13 +201,17 @@ func main() {
 	if *concat {
 		if *separator == ">" {
 			lines := strings.Split(trans, "\n")
-			trans = strings.ReplaceAll(text, "\n\n", "\n")
-			for _, line := range lines {
+			trans = text
+			for i, line := range lines {
+				if line == "" && i == len(lines)-1 {
+					continue
+				}
 				trans += "\n> " + line
 			}
 		} else {
 			trans = text + "\n" + *separator + "\n" + trans
 		}
+		trans = strings.TrimRight(trans, "\n")
 	}
 	if err := clipboard.WriteAll(trans); err != nil {
 		log.Fatal(err)
