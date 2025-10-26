@@ -13,44 +13,49 @@ import (
 	"log"
 	"os"
 
-	"html"
-
 	"cloud.google.com/go/translate"
 	"github.com/0xAX/notificator"
 	"github.com/arrufat/clipboard"
-	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/genai"
 )
 
 // GTranslate groups the client and the context needed for translation
 type GTranslate struct {
 	nmtClient *translate.Client
 	llmClient *genai.Client
-	llm       *genai.GenerativeModel
+	llmModel  string
+	llmConfig *genai.GenerateContentConfig
 	ctx       context.Context
 }
 
 func createClientWithKey(useLLM bool) (*GTranslate, error) {
 	ctx := context.Background()
 	if useLLM {
-		client, err := genai.NewClient(ctx, option.WithAPIKey(os.Getenv("GEMINI_APIKEY")))
+		client, err := genai.NewClient(ctx, &genai.ClientConfig{
+			APIKey:  os.Getenv("GEMINI_APIKEY"),
+			Backend: genai.BackendGeminiAPI,
+		})
 		if err != nil {
 			log.Fatal(err)
 		}
-		llm := client.GenerativeModel("gemini-2.0-flash-lite")
-		llm.SystemInstruction = &genai.Content{
-			Parts: []genai.Part{genai.Text("You are a language translator.\n" +
-				"Whenever you receive a message, you will only respond with a translated version of the message.\n" +
-				"The rules are as follows: if the message is in English, translate it into Korean, otherwise, translate it into English.\n" +
-				"You should strive for accuracy on the meaning and not on a literal translation.\n" +
-				"Remember: the output should only contain the translated message.")},
+		cfg := &genai.GenerateContentConfig{
+			SystemInstruction: &genai.Content{
+				Parts: []*genai.Part{{
+					Text: "You are a language translator.\n" +
+						"Whenever you receive a message, you will only respond with a translated version of the message.\n" +
+						"The rules are as follows: if the message is in English, translate it into Korean, otherwise, translate it into English.\n" +
+						"You should strive for accuracy on the meaning and not on a literal translation.\n" +
+						"Remember: the output should only contain the translated message.",
+				}},
+			},
 		}
-		return &GTranslate{nmtClient: nil, llmClient: client, llm: llm, ctx: ctx}, err
+		return &GTranslate{nmtClient: nil, llmClient: client, llmModel: "gemini-2.0-flash-lite", llmConfig: cfg, ctx: ctx}, err
 	} else {
 		client, err := translate.NewClient(ctx, option.WithAPIKey(os.Getenv("GOOGLE_TRANSLATE_APIKEY")))
 		if err != nil {
 			return nil, err
 		}
-		return &GTranslate{nmtClient: client, llmClient: nil, llm: nil, ctx: ctx}, err
+		return &GTranslate{nmtClient: client, llmClient: nil, llmModel: "", llmConfig: nil, ctx: ctx}, err
 	}
 }
 
@@ -61,9 +66,6 @@ func (gt *GTranslate) useLLM() bool {
 func (gt *GTranslate) close() {
 	if gt.nmtClient != nil {
 		gt.nmtClient.Close()
-	}
-	if gt.llmClient != nil {
-		gt.llmClient.Close()
 	}
 }
 
@@ -80,11 +82,11 @@ func (gt *GTranslate) translate(targetLang, text string) (string, error) {
 		}
 		trans = resp[0].Text
 	} else if gt.llmClient != nil {
-		resp, err := gt.llm.GenerateContent(gt.ctx, genai.Text(text))
+		resp, err := gt.llmClient.Models.GenerateContent(gt.ctx, gt.llmModel, genai.Text(text), gt.llmConfig)
 		if err != nil {
 			return "", err
 		}
-		trans = html.UnescapeString(fmt.Sprintf("%s", resp.Candidates[0].Content.Parts[0]))
+		trans = resp.Text()
 	} else {
 		return "", err
 	}
