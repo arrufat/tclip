@@ -49,7 +49,7 @@ func createClientWithKey(useLLM bool) (*GTranslate, error) {
 				}},
 			},
 		}
-		return &GTranslate{nmtClient: nil, llmClient: client, llmModel: "gemini-2.0-flash-lite", llmConfig: cfg, ctx: ctx}, err
+		return &GTranslate{nmtClient: nil, llmClient: client, llmModel: "gemini-flash-latest", llmConfig: cfg, ctx: ctx}, err
 	} else {
 		client, err := translate.NewClient(ctx, option.WithAPIKey(os.Getenv("GOOGLE_TRANSLATE_APIKEY")))
 		if err != nil {
