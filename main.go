@@ -32,7 +32,7 @@ func createClientWithKey(useLLM bool) (*GTranslate, error) {
 	ctx := context.Background()
 	if useLLM {
 		client, err := genai.NewClient(ctx, &genai.ClientConfig{
-			APIKey:  os.Getenv("GEMINI_APIKEY"),
+			APIKey:  os.Getenv("GEMINI_API_KEY"),
 			Backend: genai.BackendGeminiAPI,
 		})
 		if err != nil {
@@ -51,7 +51,7 @@ func createClientWithKey(useLLM bool) (*GTranslate, error) {
 		}
 		return &GTranslate{nmtClient: nil, llmClient: client, llmModel: "gemini-flash-latest", llmConfig: cfg, ctx: ctx}, err
 	} else {
-		client, err := translate.NewClient(ctx, option.WithAPIKey(os.Getenv("GOOGLE_TRANSLATE_APIKEY")))
+		client, err := translate.NewClient(ctx, option.WithAPIKey(os.Getenv("GOOGLE_TRANSLATE_API_KEY")))
 		if err != nil {
 			return nil, err
 		}
