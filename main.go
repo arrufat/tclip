@@ -151,10 +151,10 @@ func main() {
 
 	gTrans, err := createClientWithKey(*useLLM)
 	if err != nil {
-		if *useLLM {
+		if !*useLLM {
 			log.Fatalf("%v\nMake sure you have set the GOOGLE_TRANSLATE_APIKEY environment variable", err)
 		} else {
-			log.Fatalf("%v\nMake sure you have set the GEMINI_APIKEY environment variable", err)
+			log.Fatalf("%v\nMake sure you have set the GEMINI_API_KEY environment variable", err)
 		}
 	}
 	defer gTrans.close()
